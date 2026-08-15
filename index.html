@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root{
+    --bg:#EBEEF1; --panel:#fff; --ink:#16202B; --inkSoft:#22303D;
+    --primary:#0F766E; --primarySoft:#E3F0EF; --primaryInk:#0A5551;
+    --overdue:#D14343; --overdueSoft:#FBE9E9; --today:#C0791A; --todaySoft:#FAF0E1;
+    --done:#2E9E5B; --doneSoft:#E6F4EC; --meet:#3B5BA9; --meetSoft:#E9EDF7;
+    --text:#17242F; --muted:#6A7681; --faint:#94A0AA; --line:#E2E7EB; --lineSoft:#EEF1F3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:900px;margin:0 auto;padding:0 0 60px}
+  header{background:var(--ink);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600}
+  .brandmark{background:var(--primary);width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:15px}
+  .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  .tab{font-size:12px;padding:6px 11px;border-radius:999px;color:#9AA6B0;cursor:pointer;white-space:nowrap}
+  .tab.active{background:var(--inkSoft);color:#fff}
+  .main{padding:18px 16px}
+  h1{font-size:22px;margin:2px 0 2px}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .stat{border-radius:12px;padding:14px;border:1px solid transparent}
+  .stat .n{font-size:28px;font-weight:700;line-height:1}
+  .stat .l{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
+  .sec{margin:20px 0 0}
+  .sech{display:flex;align-items:center;gap:7px;font-weight:600;font-size:13px;margin-bottom:9px;color:var(--ink)}
+  .sech .c{font-weight:400;color:var(--muted);font-size:12px}
+  .row{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 8px 10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .row .stripe{width:4px;align-self:stretch;border-radius:4px}
+  .row .body{flex:1;min-width:0}
+  .row .t{font-size:13px;font-weight:500}
+  .row .meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:5px}
+  .chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .acts{display:flex;align-items:center;flex-shrink:0}
+  .ib{width:30px;height:30px;border:none;background:none;border-radius:8px;color:var(--muted);cursor:pointer;font-size:15px;display:grid;place-items:center}
+  .ib:hover{background:#0000000d}
+  .ib.danger{color:var(--overdue)} .ib.accent{color:var(--meet)}
+  .cbtn{width:22px;height:22px;border-radius:50%;border:2px solid var(--primary);background:none;cursor:pointer;flex-shrink:0}
+  .cbtn.done{background:var(--done);border-color:var(--done);color:#fff}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px}
+  .cardh{display:flex;align-items:center;gap:7px;margin-bottom:9px;font-weight:600;font-size:13px}
+  .mini{display:flex;align-items:center;gap:7px;margin:6px 0;font-size:12px}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .mini .mt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .btn{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--primary);color:#fff}
+  .btn.ghost{background:var(--bg);color:var(--text)}
+  .btn.block{width:100%}
+  .empty{border:1px dashed var(--line);border-radius:10px;padding:14px;color:var(--muted);font-size:13px;background:var(--panel)}
+  .note{border-radius:12px;padding:13px;font-size:13px;display:flex;gap:9px}
+  .fab{position:fixed;right:18px;bottom:18px;background:var(--primary);color:#fff;border:none;width:52px;height:52px;border-radius:50%;font-size:26px;cursor:pointer;box-shadow:0 4px 14px #0003;z-index:6}
+  .overlay{position:fixed;inset:0;background:#0f171ecc;display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:0}
+  .modal{background:var(--panel);width:100%;max-width:520px;border-radius:16px 16px 0 0;max-height:92vh;overflow:auto}
+  @media(min-width:600px){.overlay{align-items:center;padding:16px}.modal{border-radius:16px}}
+  .mhead{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--line);font-weight:700;position:sticky;top:0;background:var(--panel)}
+  .mbody{padding:16px;display:flex;flex-direction:column;gap:14px}
+  .mfoot{display:flex;gap:8px;align-items:center;padding:14px 16px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
+  label.f{display:block}
+  label.f .lb{font-size:12px;font-weight:600;color:var(--inkSoft);margin-bottom:6px;display:block}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+  textarea{resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .segs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .seg{border:1px solid var(--line);background:var(--bg);border-radius:9px;padding:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center}
+  .prio{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  .toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;z-index:30;max-width:90%;box-shadow:0 4px 14px #0004}
+  .actrow{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px}
+  .loading{padding:60px 16px;text-align:center;color:var(--muted)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toolbar select,.toolbar input{width:auto;flex:1;min-width:120px}
+  .avatar{width:40px;height:40px;border-radius:50%;background:var(--primarySoft);color:var(--primaryInk);display:grid;place-items:center;font-weight:700;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="brandmark">&#9889;</span> Follow-up Desk</div>
+    <div class="tabs" id="tabs"></div>
+  </header>
+  <div class="main" id="view"><div class="loading">Loading your deskGÇª</div></div>
+</div>
+<button class="fab" id="fab" title="New item">+</button>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ---------------- constants ---------------- */
+var CATEGORIES=['Calendar & Schedule','Inbox & Correspondence','Meetings & Minutes','Travel & Logistics','Travel Insurance','Insurance & Policies','Telephone & Bills','Documents & Reports','Projects & Events','Expenses & Budget','Board & Stakeholders','Housekeeping','Fun Factor'];
+var DEPARTMENTS=['HR','Accounts','Insurance','IT','Audit','Infrastructure'];
+var PRIORITIES=[['urgent','Urgent','#D14343','#FBE9E9'],['high','High','#C0791A','#FAF0E1'],['medium','Medium','#0F766E','#E3F0EF'],['low','Low','#6A7681','#EEF1F3']];
+var RECUR=[['none','One-off'],['daily','Daily'],['weekly','Weekly'],['monthly','Monthly'],['quarterly','Quarterly'],['yearly','Yearly']];
+var PRESETS=[
+  {title:'Reconcile telephone bills GÇö all directors',category:'Telephone & Bills',recurring:'monthly',priority:'medium'},
+  {title:'Submit corporate card receipts & expense report',category:'Expenses & Budget',recurring:'monthly',priority:'high'},
+  {title:'Check travel insurance validity / renewals',category:'Travel Insurance',recurring:'monthly',priority:'high'},
+  {title:'Distribute board book & confirm attendance',category:'Board & Stakeholders',recurring:'quarterly',priority:'high'}
+];
+var S={tasks:[],contacts:[],settings:{directors:[],deptEmails:{}}}, V='dashboard';
+
+/* ---------------- server bridge ---------------- */
+function srv(fn){var a=[].slice.call(arguments,1);return new Promise(function(res,rej){var r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);r[fn].apply(r,a);});}
+
+/* ---------------- date helpers ---------------- */
+function pad(n){return (n<10?'0':'')+n;}
+function toStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function todayStr(){return toStr(new Date());}
+function fromStr(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function effDate(t){if(!t.dueDate)return null;var p=t.dueDate.split('-');var tm=(t.dueTime||'23:59').split(':');return new Date(+p[0],+p[1]-1,+p[2],+tm[0],+tm[1]);}
+function dayDiff(s){return Math.round((fromStr(s)-fromStr(todayStr()))/86400000);}
+function overdue(t){return t.status==='pending'&&effDate(t)&&effDate(t)<new Date()&&dayDiff(t.dueDate)<0;}
+function dueToday(t){return t.status==='pending'&&t.dueDate===todayStr();}
+function satOfWeek(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate()+((6-d.getDay()+7)%7));}
+function thisWeek(t){if(t.status!=='pending'||!t.dueDate)return false;var dd=dayDiff(t.dueDate);return dd>0&&fromStr(t.dueDate)<=satOfWeek();}
+function niceDate(s){return fromStr(s).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});}
+function relLabel(t){if(!t.dueDate)return 'No date';var d=dayDiff(t.dueDate);if(t.status==='done')return 'Done';if(d<-1)return 'Overdue by '+(-d)+' days';if(d===-1)return 'Overdue by 1 day';if(d===0)return t.dueTime?('Today '+t.dueTime):'Due today';if(d===1)return 'Tomorrow';return 'In '+d+' days';}
+function addDay(s){var d=fromStr(s);d.setDate(d.getDate()+1);return toStr(d);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function emails(t){return String(t.attendees||'').split(/[,;\s]+/).map(function(s){return s.trim();}).filter(function(s){return s.indexOf('@')>-1;});}
+function prio(k){for(var i=0;i<PRIORITIES.length;i++)if(PRIORITIES[i][0]===k)return PRIORITIES[i];return PRIORITIES[2];}
+function contactById(id){for(var i=0;i<S.contacts.length;i++)if(S.contacts[i].id===id)return S.contacts[i];return null;}
+function taskById(id){for(var i=0;i<S.tasks.length;i++)if(S.tasks[i].id===id)return S.tasks[i];return null;}
+
+/* ---------------- boot ---------------- */
+window.onload=function(){srv('getState').then(function(st){if(!st){document.getElementById('view').innerHTML='<div class="empty">Server returned no data (null). This is almost always a stale deployment GÇö in Apps Script go to Deploy GåÆ Manage deployments GåÆ edit GåÆ Version: New version GåÆ Deploy, then reload. (Or open the Test deployment /dev URL, which always runs the latest saved code.)</div>';return;}S=st;render();}).catch(function(e){document.getElementById('view').innerHTML='<div class="empty">Could not load. Reload the page. '+esc(e&&e.message||e)+'</div>';});};
+document.getElementById('fab').onclick=function(){openTask(null,{});};
+
+function toast(msg){var r=document.getElementById('toastRoot');r.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(function(){r.innerHTML='';},4000);}
+
+/* ---------------- render ---------------- */
+function render(){
+  var tabs=[['dashboard','Dashboard'],['meetings','Meetings'],['all','Follow-ups'],['contacts','Contacts'],['settings','Settings']];
+  document.getElementById('tabs').innerHTML=tabs.map(function(t){return '<span class="tab '+(V===t[0]?'active':'')+'" data-tab="'+t[0]+'">'+t[1]+'</span>';}).join('');
+  var v=document.getElementById('view');
+  if(V==='dashboard')v.innerHTML=viewDashboard();
+  else if(V==='meetings')v.innerHTML=viewMeetings();
+  else if(V==='all')v.innerHTML=viewAll();
+  else if(V==='contacts')v.innerHTML=viewContacts();
+  else if(V==='settings')v.innerHTML=viewSettings();
+}
+document.addEventListener('click',function(e){
+  var tab=e.target.closest('[data-tab]'); if(tab){V=tab.getAttribute('data-tab');render();return;}
+  var el=e.target.closest('[data-act]'); if(!el)return;
+  var act=el.getAttribute('data-act'), id=el.getAttribute('data-id');
+  handle(act,id,el);
+});
+
+function refreshTasks(p){return p.then(function(tasks){S.tasks=tasks;render();});}
+function handle(act,id,el){
+  var t=id?taskById(id):null;
+  if(act==='done')refreshTasks(srv('completeTask',id));
+  else if(act==='reopen')refreshTasks(srv('reopenTask',id));
+  else if(act==='del'){if(confirm('Delete this item?'))refreshTasks(srv('deleteTask',id));}
+  else if(act==='snooze'){var n=Object.assign({},t,{dueDate:addDay(t.dueDate)});refreshTasks(srv('saveTask',n));}
+  else if(act==='edit')openTask(t,{});
+  else if(act==='mom')openMom(t);
+  else if(act==='invite'){toast('Creating inviteGÇª');srv('sendInvite',id).then(function(r){toast(r.msg);});}
+  else if(act==='emailatt'){toast('SendingGÇª');srv('emailAttendees',id).then(function(r){toast(r.msg);});}
+  else if(act==='preset'){var p=PRESETS[+el.getAttribute('data-i')];var d=fromStr(todayStr());d.setDate(28);openTask(null,Object.assign({},p,{type:'followup',dueDate:toStr(d)}));}
+  else if(act==='sched'){var dep=el.getAttribute('data-dep');openTask(null,{type:'meeting',department:dep,category:'Meetings & Minutes',recurring:'monthly',dueTime:'10:00',attendees:(S.settings.deptEmails||{})[dep]||''});}
+  else if(act==='morning')openTask(null,{type:'meeting',department:'General',title:'Daily morning meeting',category:'Meetings & Minutes',recurring:'daily',dueTime:'09:30'});
+  else if(act==='newcontact')openContact(null);
+  else if(act==='editcontact')openContact(contactById(id));
+  else if(act==='delcontact'){if(confirm('Delete contact?'))srv('deleteContact',id).then(function(c){S.contacts=c;render();});}
+  else if(act==='sms')doSms();
+  else if(act==='installrem'){toast('Setting upGÇª');srv('installReminders').then(function(){S.triggersOn=true;toast('Daily reminder email is on.');render();});}
+  else if(act==='removerem'){srv('removeReminders').then(function(){S.triggersOn=false;toast('Daily reminder off.');render();});}
+  else if(act==='savedir'){var ds=[0,1,2].map(function(i){return document.getElementById('dir'+i).value;});srv('saveSettings',{directors:ds}).then(function(s){S.settings=s;toast('Saved.');});}
+  else if(act==='savedept'){var m={};DEPARTMENTS.forEach(function(d){m[d]=document.getElementById('de_'+d).value;});srv('saveSettings',{deptEmails:m}).then(function(s){S.settings=s;toast('Saved.');});}
+}
+
+/* ---------------- rows ---------------- */
+function rowHtml(t){
+  var meeting=t.type==='meeting', od=overdue(t), td=dueToday(t), done=t.status==='done';
+  var p=prio(t.priority);
+  var stripe=done?'var(--done)':od?'var(--overdue)':td?'var(--today)':meeting?'var(--meet)':p[2];
+  var c=t.contactId?contactById(t.contactId):null;
+  var meta=[];
+  if(meeting&&t.department)meta.push('<b style="color:var(--meet)">'+esc(t.department)+'</b>');
+  if(!meeting&&t.director==='All')meta.push('All directors');
+  if(!meeting&&t.director&&t.director!=='All')meta.push(esc(t.director));
+  if(!meeting&&t.category)meta.push(esc(t.category));
+  if(t.location)meta.push('&#128205; '+esc(t.location));
+  if(meeting&&emails(t).length)meta.push('&#128100; '+emails(t).length+' guest'+(emails(t).length>1?'s':''));
+  if(c)meta.push('&#128100; '+esc(c.name)+(c.phone?' <a href="tel:'+esc(c.phone)+'" style="color:var(--primary)">&#9742;</a>':'')+(c.email?' <a href="mailto:'+esc(c.email)+'" style="color:var(--primary)">&#9993;</a>':''));
+  if(t.dueDate)meta.push(niceDate(t.dueDate)+(t.dueTime?(' '+t.dueTime):''));
+  var chipColor=od?['var(--overdueSoft)','var(--overdue)']:td?['var(--todaySoft)','var(--today)']:['var(--lineSoft)','var(--muted)'];
+  var acts='';
+  if(!done)acts+='<button class="cbtn" data-act="done" data-id="'+t.id+'" title="Done"></button>';
+  else acts+='<button class="cbtn done" data-act="reopen" data-id="'+t.id+'" title="Reopen">&#10003;</button>';
+  var right='';
+  if(meeting){
+    right+='<button class="ib accent" data-act="mom" data-id="'+t.id+'" title="Minutes of Meeting">&#128221;</button>';
+    if(t.dueDate){right+='<button class="ib accent" data-act="invite" data-id="'+t.id+'" title="Calendar invite (emails guests)">&#128197;</button>';}
+    if(emails(t).length)right+='<button class="ib" data-act="emailatt" data-id="'+t.id+'" title="Email attendees">&#9993;</button>';
+  }
+  if(!done&&t.dueDate)right+='<button class="ib" data-act="snooze" data-id="'+t.id+'" title="Snooze 1 day">&#8987;</button>';
+  right+='<button class="ib" data-act="edit" data-id="'+t.id+'" title="Edit">&#9998;</button>';
+  right+='<button class="ib danger" data-act="del" data-id="'+t.id+'" title="Delete">&#128465;</button>';
+  var momBadge=(t.momPresent||t.momDiscussion||t.momDecisions||t.momActions)?' <span class="pill" style="background:var(--doneSoft);color:var(--done)">MOM</span>':'';
+  var meetBadge=meeting?'<span class="pill" style="background:var(--meetSoft);color:var(--meet)">Meeting</span> ':'';
+  return '<div class="row"><div class="stripe" style="background:'+stripe+'"></div>'+
+    '<div class="acts">'+acts+'</div>'+
+    '<div class="body"><div class="t">'+meetBadge+esc(t.title)+(t.recurring&&t.recurring!=='none'?' <span style="font-size:10px;color:var(--muted)">&#8635; '+t.recurring+'</span>':'')+momBadge+'</div>'+
+    '<div class="meta">'+meta.join(' &middot; ')+'</div>'+
+    (t.notes?'<div class="meta" style="color:var(--faint)">&#128209; '+esc(t.notes).slice(0,120)+'</div>':'')+'</div>'+
+    '<div class="acts">'+(!done?'<span class="chip" style="background:'+chipColor[0]+';color:'+chipColor[1]+'">'+relLabel(t)+'</span>':'')+right+'</div></div>';
+}
+
+/* ---------------- dashboard ---------------- */
+function viewDashboard(){
+  var open=S.tasks.filter(function(t){return t.status==='pending';});
+  var od=open.filter(overdue).sort(byDue), td=open.filter(function(t){return dueToday(t)&&!overdue(t);});
+  var wk=open.filter(thisWeek).sort(byDue);
+  var att=od.concat(td);
+  var routine={daily:open.filter(function(t){return t.recurring==='daily';}).sort(byDue),
+    weekly:open.filter(function(t){return t.recurring==='weekly';}).sort(byDue),
+    monthly:open.filter(function(t){return ['monthly','quarterly','yearly'].indexOf(t.recurring)>-1;}).sort(byDue)};
+  var doneWk=S.tasks.filter(function(t){return t.status==='done'&&t.completedAt&&(Date.now()-new Date(t.completedAt).getTime())<6048e5;}).length;
+  var h='<div class="eyebrow">Follow-up Desk</div><h1>Nothing slips today</h1><p class="sub">Every follow-up and meeting, ordered by how soon itGÇÖs due. Work week MonGÇôSat.</p>';
+  h+='<div class="stats">'+
+    stat(od.length,'Overdue',od.length?'var(--overdueSoft)':'var(--panel)',od.length?'var(--overdue)':'var(--ink)',od.length?'var(--overdue)':'var(--muted)',!od.length)+
+    stat(td.length,'Due today',td.length?'var(--todaySoft)':'var(--panel)',td.length?'var(--today)':'var(--ink)',td.length?'var(--today)':'var(--muted)',!td.length)+
+    stat(wk.length,'This week',' var(--panel)','var(--ink)','var(--muted)',true)+'</div>';
+  if(!S.triggersOn)h+='<div class="note" style="background:var(--primarySoft);color:var(--primaryInk);border:1px solid var(--primary);cursor:pointer" data-act="installrem"><span>&#128276;</span><span><b>Turn on the daily reminder email</b> GÇö get todayGÇÖs overdue &amp; due items in your inbox every morning.</span></div>';
+  h+='<div class="sec"><div class="sech">&#9888;&#65039; Needs attention now <span class="c">'+att.length+'</span></div>';
+  h+=att.length?att.map(rowHtml).join(''):'<div class="empty">YouGÇÖre clear GÇö nothing overdue or due today.</div>';
+  h+='</div>';
+  h+='<div class="sec"><div class="sech">&#8635; My routine</div><p class="sub" style="margin:-4px 0 8px">Recurring tasks by cadence GÇö tick one done and it rolls to the next cycle.</p><div class="grid3">'+
+    rcard('Daily','&#9200;','var(--primarySoft)','var(--primaryInk)',routine.daily)+
+    rcard('Weekly','&#128197;','var(--todaySoft)','var(--today)',routine.weekly)+
+    rcard('Monthly','&#128340;','var(--meetSoft)','var(--meet)',routine.monthly)+'</div></div>';
+  if(wk.length){h+='<div class="sec"><div class="sech">&#8987; Coming up this week <span class="c">'+wk.length+'</span></div>'+wk.map(rowHtml).join('')+'</div>';}
+  h+='<div class="sec"><div class="sech">&#128241; Quick-add from an SMS reminder</div><textarea id="smsbox" rows="2" placeholder="Paste the insurance/payment SMS hereGÇª"></textarea><button class="btn ghost" style="margin-top:8px" data-act="sms">Parse into a follow-up</button></div>';
+  h+='<div class="sec"><div class="sech">&#8635; Quick-add recurring duties</div><div class="grid3">'+PRESETS.map(function(p,i){return '<div class="card" style="cursor:pointer" data-act="preset" data-i="'+i+'"><div style="font-size:13px;font-weight:500">'+esc(p.title)+'</div><div style="font-size:11px;color:var(--muted);margin-top:3px">'+p.recurring+' &middot; '+esc(p.category)+'</div></div>';}).join('')+'</div></div>';
+  h+='<div class="sec"><div class="sech" style="color:var(--done)">&#10003; '+doneWk+' completed in the last 7 days</div></div>';
+  return h;
+}
+function stat(n,l,bg,fg,lc,calm){return '<div class="stat" style="background:'+bg+';'+(calm?'border-color:var(--line)':'')+'"><div class="n" style="color:'+fg+'">'+n+'</div><div class="l" style="color:'+lc+'">'+l+'</div></div>';}
+function byDue(a,b){return !a.dueDate?1:!b.dueDate?-1:a.dueDate<b.dueDate?-1:1;}
+function rcard(label,icon,bg,fg,items){
+  var body=items.length?items.map(function(t){var col=overdue(t)?'var(--overdue)':dueToday(t)?'var(--today)':'var(--done)';return '<div class="mini"><span class="dot" style="background:'+col+'"></span><span class="mt" data-act="edit" data-id="'+t.id+'" style="cursor:pointer">'+esc(t.title)+'</span><span style="font-size:10px;color:var(--muted)">'+relLabel(t)+'</span></div>';}).join(''):'<div style="font-size:12px;color:var(--faint)">None yet.</div>';
+  return '<div class="card"><div class="cardh"><span style="background:'+bg+';color:'+fg+';border-radius:6px;padding:3px 6px">'+icon+'</span>'+label+'<span style="margin-left:auto;background:'+bg+';color:'+fg+';border-radius:999px;padding:1px 8px;font-size:11px">'+items.length+'</span></div>'+body+'</div>';
+}
+function doSms(){var v=document.getElementById('smsbox').value;if(!v.trim())return;srv('parseSms',v).then(function(d){openTask(null,d);});}
+
+/* ---------------- meetings ---------------- */
+function viewMeetings(){
+  var meetings=S.tasks.filter(function(t){return t.type==='meeting'&&t.status==='pending';});
+  var h='<div class="eyebrow">Meetings</div><h1>Department meetings</h1><p class="sub">HR, Accounts, Insurance, IT, Audit, Infrastructure GÇö plus your daily morning meeting.</p>';
+  h+='<div class="note" style="background:var(--meetSoft);color:#2B3E6E;border:1px solid var(--meet);margin:12px 0"><span>&#9993;</span><span><b>How members get the mail:</b> add attendee emails, then tap the calendar icon GÇö the app creates the event and emails every guest an invite &amp; reminder. Use minutes (&#128221;) to record and circulate the MOM.</span></div>';
+  h+='<div class="card" style="cursor:pointer;margin-bottom:12px" data-act="morning"><b>+ Schedule the daily morning meeting</b><div style="font-size:12px;color:var(--muted)">Recurring every day -+ take minutes &amp; circulate after</div></div>';
+  DEPARTMENTS.forEach(function(dep){
+    var list=meetings.filter(function(m){return m.department===dep;}).sort(byDue);
+    h+='<div class="sec"><div class="sech"><span style="background:var(--meetSoft);color:var(--meet);border-radius:6px;padding:3px 6px">&#128188;</span>'+dep+(list.length?' <span class="c">'+list.length+'</span>':'')+'<button class="btn ghost" style="margin-left:auto;padding:5px 10px;font-size:12px" data-act="sched" data-dep="'+dep+'">+ Schedule</button></div>';
+    h+=list.length?list.map(rowHtml).join(''):'<div class="empty">No '+dep+' meetings yet.</div>';
+    h+='</div>';
+  });
+  var others=meetings.filter(function(m){return DEPARTMENTS.indexOf(m.department)<0;}).sort(byDue);
+  if(others.length){h+='<div class="sec"><div class="sech"><span style="background:var(--meetSoft);color:var(--meet);border-radius:6px;padding:3px 6px">&#128340;</span>Daily / other meetings <span class="c">'+others.length+'</span></div>'+others.map(rowHtml).join('')+'</div>';}
+  return h;
+}
+
+/* ---------------- all follow-ups ---------------- */
+function viewAll(){
+  var h='<div class="eyebrow">All follow-ups &amp; meetings</div><h1>Everything on your desk</h1>';
+  h+='<div class="toolbar"><input id="q" placeholder="Search title or notes" oninput="renderList()"><select id="fst" onchange="renderList()"><option value="open">Open</option><option value="done">Done (reference)</option><option value="all">All</option></select><select id="fdir" onchange="renderList()"><option value="all">All directors</option>'+(S.settings.directors||[]).map(function(d){return '<option>'+esc(d)+'</option>';}).join('')+'</select></div>';
+  h+='<div id="listbox"></div>';
+  setTimeout(renderList,0);
+  return h;
+}
+function renderList(){
+  var q=(document.getElementById('q')||{}).value||'', st=(document.getElementById('fst')||{}).value||'open', dir=(document.getElementById('fdir')||{}).value||'all';
+  var list=S.tasks.filter(function(t){
+    if(st==='open'&&t.status!=='pending')return false;
+    if(st==='done'&&t.status!=='done')return false;
+    if(dir!=='all'&&t.director!==dir)return false;
+    if(q&&(t.title+' '+(t.notes||'')).toLowerCase().indexOf(q.toLowerCase())<0)return false;
+    return true;
+  }).sort(byDue);
+  document.getElementById('listbox').innerHTML=list.length?list.map(rowHtml).join(''):'<div class="empty">Nothing matches.</div>';
+}
+
+/* ---------------- contacts ---------------- */
+function viewContacts(){
+  var h='<div class="eyebrow">Contacts</div><h1>Follow-up contact list</h1><p class="sub">People you chase, brief, or coordinate with GÇö tap to call or email.</p>';
+  h+='<div class="toolbar"><input id="cq" placeholder="Search" oninput="renderContacts()"><button class="btn primary" data-act="newcontact">+ New</button></div><div id="cbox"></div>';
+  setTimeout(renderContacts,0);
+  return h;
+}
+function renderContacts(){
+  var q=(document.getElementById('cq')||{}).value||'';
+  var list=S.contacts.filter(function(c){return (c.name+' '+(c.org||'')+' '+(c.role||'')+' '+(c.email||'')+' '+(c.phone||'')).toLowerCase().indexOf(q.toLowerCase())>-1;}).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+  document.getElementById('cbox').innerHTML=list.length?('<div class="grid3">'+list.map(function(c){
+    return '<div class="card" style="display:flex;gap:10px"><div class="avatar">'+esc((c.name||'?').charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">'+esc(c.name)+'</div>'+((c.role||c.org)?'<div style="font-size:12px;color:var(--muted)">'+esc([c.role,c.org].filter(Boolean).join(' -+ '))+'</div>':'')+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+(c.phone?'<a class="chip" style="background:var(--primarySoft);color:var(--primaryInk)" href="tel:'+esc(c.phone)+'">GÿÄ '+esc(c.phone)+'</a>':'')+(c.email?'<a class="chip" style="background:var(--lineSoft);color:var(--inkSoft)" href="mailto:'+esc(c.email)+'">G£ë '+esc(c.email)+'</a>':'')+'</div>'+(c.notes?'<div style="font-size:12px;color:var(--faint);margin-top:6px">'+esc(c.notes)+'</div>':'')+'</div><div><button class="ib" data-act="editcontact" data-id="'+c.id+'">G£Ä</button><button class="ib danger" data-act="delcontact" data-id="'+c.id+'">=ƒùæ</button></div></div>';
+  }).join('')+'</div>'):'<div class="empty">No contacts yet. Add the people you follow up with.</div>';
+}
+
+/* ---------------- settings ---------------- */
+function viewSettings(){
+  var d=S.settings.directors||['','',''];
+  var de=S.settings.deptEmails||{};
+  var h='<div class="eyebrow">Settings</div><h1>Directors &amp; preferences</h1>';
+  h+='<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:8px">Your three directors</div>'+[0,1,2].map(function(i){return '<input id="dir'+i+'" value="'+esc(d[i]||'')+'" style="margin-bottom:8px">';}).join('')+'<button class="btn primary" data-act="savedir">Save names</button></div>';
+  h+='<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:4px">Default attendees per department</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Auto-filled when you schedule that departmentGÇÖs meeting.</div>'+DEPARTMENTS.map(function(x){return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:100px;font-size:12px;font-weight:600">'+x+'</span><input id="de_'+x+'" value="'+esc(de[x]||'')+'" placeholder="email1@GÇª, email2@GÇª"></div>';}).join('')+'<button class="btn primary" data-act="savedept">Save emails</button></div>';
+  h+='<div class="card"><div style="font-weight:600;margin-bottom:4px">Daily reminder email</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Every morning, get overdue &amp; due-today items in your inboxGÇöeven without opening the app.</div>'+(S.triggersOn?'<button class="btn ghost" data-act="removerem">Turn off reminders</button>':'<button class="btn primary" data-act="installrem">Turn on reminders</button>')+'</div>';
+  return h;
+}
+
+/* ---------------- task modal ---------------- */
+function openTask(t,prefill){
+  var f=Object.assign({type:'followup',title:'',category:'Travel & Logistics',department:'HR',director:'All',location:'',attendees:'',contactId:'',priority:'medium',dueDate:todayStr(),dueTime:'',recurring:'none',notes:'',enableMom:false},t||{},prefill||{});
+  var editing=!!(t&&t.id);
+  function seg(v,l){return '<div class="seg" style="'+(f.type===v?(v==='meeting'?'background:var(--meetSoft);border-color:var(--meet);color:var(--meet)':'background:var(--primarySoft);border-color:var(--primary);color:var(--primaryInk)'):'')+'" onclick="__setType(\''+v+'\')">'+l+'</div>';}
+  var meeting=f.type==='meeting';
+  var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
+   '<div class="mhead">'+(editing?'Edit ':'New ')+(meeting?'meeting':'follow-up')+'<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   '<div class="segs">'+seg('followup','Follow-up')+seg('meeting','Meeting')+'</div>'+
+   fld('Title','<input id="m_title" value="'+esc(f.title)+'">')+
+   (meeting?
+     '<div class="two">'+fld('Department',selEl('m_department',DEPARTMENTS.concat(['General']),f.department))+fld('Location','<input id="m_location" value="'+esc(f.location)+'">')+'</div>'+
+     fld('Attendee emails (comma separated)','<input id="m_attendees" value="'+esc(f.attendees)+'" placeholder="name@company.com, GÇª">')
+     :
+     '<div class="two">'+fld('Director',selEl('m_director',['All'].concat(S.settings.directors||[]),f.director))+fld('Category',selEl('m_category',CATEGORIES,f.category))+'</div>')+
+   (meeting ? fld('AI Assistant', '<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="m_enableMom" style="width:auto;" '+(f.enableMom?'checked':'')+'> Enable Live AI Recording & Summarization</label>') : '')+
+   fld('Priority','<div class="prio">'+PRIORITIES.map(function(p){return '<div class="seg" style="'+(f.priority===p[0]?'background:'+p[3]+';border-color:'+p[2]+';color:'+p[2]:'')+'" onclick="__setPrio(\''+p[0]+'\')">'+p[1]+'</div>';}).join('')+'</div>')+
+   '<div class="two">'+fld(meeting?'Date':'Due date','<input type="date" id="m_dueDate" value="'+esc(f.dueDate)+'">')+fld(meeting?'Start time':'Time','<input type="time" id="m_dueTime" value="'+esc(f.dueTime)+'">')+'</div>'+
+   fld('Repeat',selEl('m_recurring',RECUR.map(function(r){return r[0];}),f.recurring,RECUR))+
+   (S.contacts.length?fld('Link a contact','<select id="m_contactId"><option value="">GÇö none GÇö</option>'+S.contacts.map(function(c){return '<option value="'+c.id+'"'+(f.contactId===c.id?' selected':'')+'>'+esc(c.name+(c.org?' -+ '+c.org:''))+'</option>';}).join('')+'</select>'):'')+
+   fld('Notes GÇö kept as reference','<textarea id="m_notes" rows="2">'+esc(f.notes)+'</textarea>')+
+   '</div><div class="mfoot">'+(editing?'<button class="btn ghost" style="color:var(--overdue)" onclick="__delTask(\''+f.id+'\')">Delete</button>':'')+'<div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="__saveTask()">'+(editing?'Save':'Add')+'</button></div></div></div></div>';
+  document.getElementById('modalRoot').innerHTML=m;
+  window.__type=f.type;window.__prio=f.priority;window.__editId=editing?f.id:'';
+}
+window.__setType=function(v){window.__type=v;var t=taskById(window.__editId)||{};var cur=collectTask();openTask(window.__editId?taskById(window.__editId):null,Object.assign(cur,{type:v}));};
+window.__setPrio=function(v){window.__prio=v;var els=document.querySelectorAll('.prio .seg');PRIORITIES.forEach(function(p,i){els[i].style.cssText=(v===p[0]?'background:'+p[3]+';border-color:'+p[2]+';color:'+p[2]:'');});};
+function collectTask(){
+  function val(id){var e=document.getElementById(id);return e?e.value:'';}
+  return {type:window.__type,title:val('m_title'),department:val('m_department'),location:val('m_location'),attendees:val('m_attendees'),director:val('m_director'),category:val('m_category'),priority:window.__prio,dueDate:val('m_dueDate'),dueTime:val('m_dueTime'),recurring:val('m_recurring'),contactId:val('m_contactId'),notes:val('m_notes'),enableMom: document.getElementById('m_enableMom') ? document.getElementById('m_enableMom').checked : false};
+}
+window.__saveTask=function(){
+  var d=collectTask();if(!d.title.trim()){toast('Add a title.');return;}
+  if(window.__editId)d.id=window.__editId;
+  closeModal();toast('SavingGÇª');
+  refreshTasks(srv('saveTask',d));
+};
+window.__delTask=function(id){closeModal();refreshTasks(srv('deleteTask',id));};
+
+/* ---------------- AI MOM Live Recording & Summarization Logic ---------------- */
+
+window.__mediaRecorder = null;
+window.__audioChunks = [];
+
+window.__startRecording = function() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Your browser or device does not support native recording, or it is being blocked by Google Apps Script security. Please use the Upload File option.");
+        return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function(stream) {
+        window.__mediaRecorder = new MediaRecorder(stream);
+        window.__mediaRecorder.start();
+        window.__audioChunks = [];
+
+        window.__mediaRecorder.addEventListener("dataavailable", function(event) {
+            window.__audioChunks.push(event.data);
+        });
+
+        window.__mediaRecorder.addEventListener("stop", function() {
+            toast("Finalizing audio file...");
+            var audioBlob = new Blob(window.__audioChunks, { type: 'audio/webm' });
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                var base64 = reader.result.split(',')[1];
+                toast("Uploading securely to Drive...");
+                srv('uploadAudioToDrive', 'MOM_Audio_' + Date.now() + '.webm', 'audio/webm', base64)
+                .then(function(res) {
+                    if(res.ok) {
+                        document.getElementById('mom_audio_url_hidden').value = res.url;
+                        document.getElementById('mom_audio_id_hidden').value = res.id;
+                        var player = document.getElementById('mom_audio_player');
+                        player.src = res.url;
+                        player.style.display = 'block';
+                        toast("G£à Audio saved!");
+                    } else {
+                        toast("Upload failed: " + res.msg);
+                    }
+                });
+            };
+            reader.readAsDataURL(audioBlob);
+        });
+
+        document.getElementById('btnStartRec').style.display = 'none';
+        document.getElementById('btnStopRec').style.display = 'inline-block';
+        document.getElementById('recIndicator').style.display = 'inline-block';
+        toast("=ƒö¦ Recording started...");
+    })
+    .catch(function(err) {
+        console.error("Mic error:", err);
+        alert("Microphone access blocked! Google Apps Script blocks the microphone inside its web apps on most desktop browsers for security reasons. Please use the 'Upload File' button instead.");
+    });
+};
+
+window.__stopRecording = function() {
+    if(window.__mediaRecorder) {
+        window.__mediaRecorder.stop();
+        window.__mediaRecorder.stream.getTracks().forEach(function(track) { track.stop(); });
+        document.getElementById('btnStartRec').style.display = 'inline-block';
+        document.getElementById('btnStopRec').style.display = 'none';
+        document.getElementById('recIndicator').style.display = 'none';
+    }
+};
+
+window.__handleManualUpload = function(input) {
+  if(input.files && input.files[0]) {
+    var file = input.files[0];
+    var player = document.getElementById('mom_audio_player');
+    player.src = URL.createObjectURL(file);
+    player.style.display = 'block';
+
+    toast("Uploading audio to Google Drive...");
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+      srv('uploadAudioToDrive', file.name, file.type, base64).then(function(res) {
+        if(res.ok) {
+          document.getElementById('mom_audio_url_hidden').value = res.url;
+          document.getElementById('mom_audio_id_hidden').value = res.id;
+          toast("G£à Manual upload saved securely.");
+        } else { toast("Upload failed."); }
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+window.__processWithGemini = function() {
+  var fileId = document.getElementById('mom_audio_id_hidden').value;
+  var text = document.getElementById('mom_transcript').value;
+  var fileInput = document.getElementById('mom_audio_file');
+  var btn = document.getElementById('btnSummarize');
+
+  if (!fileId && (!fileInput.files || fileInput.files.length === 0) && !text.trim()) {
+     toast("Please record, upload, or paste text first.");
+     return;
+  }
+
+  btn.innerText = "Processing with Gemini...";
+  btn.disabled = true;
+
+  var apiKey = "";
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+
+  var payload = {
+    contents: [{ parts: [] }],
+    generationConfig: { responseMimeType: "application/json" }
+  };
+  var promptPart = { text: "You are a professional secretary. Analyze the provided meeting input (audio or text notes). Return ONLY a valid JSON object with exactly three keys: 'transcript' (the literal full transcription of the audio, or just the raw text provided), 'discussion' (a professional summary of the main points), and 'decisions' (any explicit decisions made or action items)." };
+
+  function callAPI() {
+     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+     .then(function(res) { return res.json(); })
+     .then(function(data) {
+        btn.innerText = "G£¿ Process & Summarize";
+        btn.disabled = false;
+        if(data.error) { toast("API Error: " + data.error.message); return; }
+        try {
+          var responseText = data.candidates[0].content.parts[0].text;
+          var parsed = JSON.parse(responseText);
+          document.getElementById('mom_transcript').value = parsed.transcript || text;
+          document.getElementById('mom_disc').value = parsed.discussion || "";
+          document.getElementById('mom_dec').value = parsed.decisions || "";
+          toast("G£à Processing complete! Data filled.");
+        } catch (e) { toast("Error parsing summary. Check console."); console.error("Parse error:", e, data); }
+     })
+     .catch(function(err) { toast("Network Error."); btn.innerText = "G£¿ Process & Summarize"; btn.disabled = false; console.error(err); });
+  }
+
+  // Use the file if they just manually selected one
+  if (fileInput.files && fileInput.files.length > 0) {
+     var file = fileInput.files[0];
+     var reader = new FileReader();
+     reader.onload = function(e) {
+        var base64 = e.target.result.split(',')[1];
+        payload.contents[0].parts.push({ inlineData: { mimeType: file.type || "audio/mp3", data: base64 } });
+        payload.contents[0].parts.push(promptPart);
+        callAPI();
+     };
+     reader.readAsDataURL(file);
+  } 
+  // Otherwise, pull the recorded/uploaded file from Drive
+  else if (fileId) {
+     toast("Fetching saved audio from Drive...");
+     srv('getAudioBase64', fileId).then(function(res) {
+        if(res.ok) {
+           payload.contents[0].parts.push({ inlineData: { mimeType: res.mimeType, data: res.base64 } });
+           payload.contents[0].parts.push(promptPart);
+           toast("Analyzing audio...");
+           callAPI();
+        } else {
+           toast("Failed to retrieve audio from Drive.");
+           btn.innerText = "G£¿ Process & Summarize";
+           btn.disabled = false;
+        }
+     });
+  } 
+  // Otherwise, just summarize the text
+  else {
+     payload.contents[0].parts.push({ text: "Meeting Input:\n" + text });
+     payload.contents[0].parts.push(promptPart);
+     callAPI();
+  }
+};
+
+/* ---------------- MOM modal ---------------- */
+function openMom(t){
+  var acts=[];try{acts=JSON.parse(t.momActions||'[]');}catch(e){}
+  if(!acts.length)acts=[{what:'',owner:'',due:''}];
+  window.__momActs=acts;window.__momId=t.id;
+  var present=t.momPresent||emails(t).join(', ');
+  
+  var aiPanel = t.enableMom ?
+    '<div style="background:var(--primarySoft); border:1px solid var(--primary); border-radius:8px; padding:12px; margin-bottom:14px;">'+
+      '<div style="font-weight:600; color:var(--primaryInk); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">'+
+        '<span>&#128266; AI Meeting Assistant</span>'+
+        '<span id="recIndicator" style="display:none; color:var(--overdue); font-size:11px; font-weight:bold;">=ƒö¦ Recording...</span>'+
+      '</div>'+
+      
+      '<div style="display:flex; gap:8px; margin-bottom:8px;">'+
+        '<button class="btn primary" style="padding:6px 12px; font-size:12px; flex:1;" id="btnStartRec" onclick="__startRecording()">=ƒÄñ Start Recording</button>'+
+        '<button class="btn ghost" style="padding:6px 12px; font-size:12px; flex:1; display:none; background:var(--overdueSoft); color:var(--overdue); border:1px solid var(--overdue);" id="btnStopRec" onclick="__stopRecording()">GÅ¦ Stop Recording</button>'+
+      '</div>'+
+      '<div style="font-size:11px; color:var(--inkSoft); margin-bottom:8px;">Or upload a file (if mic is blocked by browser): <input type="file" id="mom_audio_file" accept="audio/*" capture="microphone" style="font-size:11px; width:150px; padding:0; border:none; background:transparent;" onchange="__handleManualUpload(this)"></div>'+
+
+      '<audio id="mom_audio_player" controls style="width:100%; height:30px; margin-bottom:8px; '+(t.momAudioUrl?'':'display:none;')+'" src="'+esc(t.momAudioUrl)+'"></audio>'+
+      '<input type="hidden" id="mom_audio_url_hidden" value="'+esc(t.momAudioUrl)+'">'+
+      '<input type="hidden" id="mom_audio_id_hidden" value="'+esc(t.momAudioId||'')+'">'+
+
+      '<textarea id="mom_transcript" rows="3" placeholder="Raw transcript or manual notes..." style="font-size:12px; margin-bottom:12px;">'+esc(t.momTranscript||'')+'</textarea>'+
+      '<button class="btn primary block" id="btnSummarize" onclick="__processWithGemini()">G£¿ Process & Summarize</button>'+
+    '</div>' : '';
+
+  var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
+   '<div class="mhead">Minutes of Meeting<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   '<div style="font-size:13px;color:var(--muted)">'+esc(t.title)+(t.dueDate?' -+ '+niceDate(t.dueDate):'')+'</div>'+
+   fld('Present','<input id="mom_present" value="'+esc(present)+'">')+
+   aiPanel +
+   fld('Discussion','<textarea id="mom_disc" rows="3">'+esc(t.momDiscussion)+'</textarea>')+
+   fld('Decisions','<textarea id="mom_dec" rows="2">'+esc(t.momDecisions)+'</textarea>')+
+   '<div><div class="lb" style="font-size:12px;font-weight:600;color:var(--inkSoft);margin-bottom:6px">Action items</div><div id="momacts"></div><button class="btn ghost" style="padding:6px 10px;font-size:12px" onclick="__addAct()">+ Add action</button></div>'+
+   '</div><div class="mfoot"><button class="btn ghost" onclick="__copyMom()">Copy</button><div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost" onclick="__saveMom()">Save</button><button class="btn primary" onclick="__circulate()">Circulate to members</button></div></div></div></div>';
+  document.getElementById('modalRoot').innerHTML=m;renderActs();
+}
+function renderActs(){
+  document.getElementById('momacts').innerHTML=window.__momActs.map(function(a,i){
+    return '<div class="actrow"><input placeholder="Action" value="'+esc(a.what)+'" oninput="__act('+i+',\'what\',this.value)"><input placeholder="Owner" value="'+esc(a.owner)+'" oninput="__act('+i+',\'owner\',this.value)"><input type="date" value="'+esc(a.due)+'" oninput="__act('+i+',\'due\',this.value)"><button class="ib danger" onclick="__delAct('+i+')">=ƒùæ</button></div>';
+  }).join('');
+}
+window.__act=function(i,k,v){window.__momActs[i][k]=v;};
+window.__addAct=function(){window.__momActs.push({what:'',owner:'',due:''});renderActs();};
+window.__delAct=function(i){window.__momActs.splice(i,1);if(!window.__momActs.length)window.__momActs=[{what:'',owner:'',due:''}];renderActs();};
+function collectMom(){return {present:document.getElementById('mom_present').value,discussion:document.getElementById('mom_disc').value,decisions:document.getElementById('mom_dec').value,actions:window.__momActs.filter(function(a){return a.what&&a.what.trim();}),
+  transcript: document.getElementById('mom_transcript') ? document.getElementById('mom_transcript').value : '',
+  audioUrl: document.getElementById('mom_audio_url_hidden') ? document.getElementById('mom_audio_url_hidden').value : '',
+  audioId: document.getElementById('mom_audio_id_hidden') ? document.getElementById('mom_audio_id_hidden').value : ''
+};}
+window.__saveMom=function(){closeModal();toast('Saving MOMGÇª');refreshTasks(srv('saveMom',window.__momId,collectMom()));};
+window.__circulate=function(){var id=window.__momId;toast('Saving and circulatingGÇª');srv('saveMom',id,collectMom()).then(function(tasks){S.tasks=tasks;srv('circulateMom',id).then(function(r){toast(r.msg);render();});});closeModal();};
+window.__copyMom=function(){var t=Object.assign({},taskById(window.__momId));var m=collectMom();t.momPresent=m.present;t.momDiscussion=m.discussion;t.momDecisions=m.decisions;t.momActions=JSON.stringify(m.actions);var txt=buildMomText(t);navigator.clipboard&&navigator.clipboard.writeText(txt);toast('MOM text copied.');};
+function buildMomText(t){var acts=[];try{acts=JSON.parse(t.momActions||'[]');}catch(e){}var l=['MINUTES OF MEETING','','Meeting: '+t.title,t.department?'Department: '+t.department:'',t.dueDate?'Date: '+niceDate(t.dueDate):'','Present: '+(t.momPresent||'GÇö'),'','DISCUSSION',t.momDiscussion||'GÇö','','DECISIONS',t.momDecisions||'GÇö','','ACTION ITEMS'];acts.length?acts.forEach(function(a,i){l.push((i+1)+'. '+a.what+(a.owner?' GÇö '+a.owner:'')+(a.due?' GÇö '+a.due:''));}):l.push('GÇö');return l.filter(function(x){return x!=='';}).join('\n');}
+
+/* ---------------- contact modal ---------------- */
+function openContact(c){
+  var f=c||{name:'',role:'',org:'',phone:'',email:'',notes:''};
+  window.__cid=c?c.id:'';
+  var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
+   '<div class="mhead">'+(c?'Edit':'New')+' contact<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   fld('Name','<input id="c_name" value="'+esc(f.name)+'">')+
+   '<div class="two">'+fld('Role / title','<input id="c_role" value="'+esc(f.role)+'">')+fld('Company / dept','<input id="c_org" value="'+esc(f.org)+'">')+'</div>'+
+   '<div class="two">'+fld('Phone','<input id="c_phone" value="'+esc(f.phone)+'">')+fld('Email','<input id="c_email" value="'+esc(f.email)+'">')+'</div>'+
+   fld('Notes','<textarea id="c_notes" rows="2">'+esc(f.notes)+'</textarea>')+
+   '</div><div class="mfoot"><div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="__saveContact()">'+(c?'Save':'Add')+'</button></div></div></div></div>';
+  document.getElementById('modalRoot').innerHTML=m;
+}
+window.__saveContact=function(){
+  function v(id){return document.getElementById(id).value;}
+  var c={name:v('c_name'),role:v('c_role'),org:v('c_org'),phone:v('c_phone'),email:v('c_email'),notes:v('c_notes')};
+  if(!c.name.trim()){toast('Add a name.');return;}
+  if(window.__cid)c.id=window.__cid;
+  closeModal();srv('saveContact',c).then(function(list){S.contacts=list;render();});
+};
+
+/* ---------------- modal utils ---------------- */
+function closeModal(e){if(e&&e.target&&!e.target.classList.contains('overlay'))return;document.getElementById('modalRoot').innerHTML='';}
+function fld(label,inner){return '<label class="f"><span class="lb">'+label+'</span>'+inner+'</label>';}
+function selEl(id,opts,val,pairs){return '<select id="'+id+'">'+opts.map(function(o,i){var lbl=pairs?pairs[i][1]:o;return '<option value="'+esc(o)+'"'+(val===o?' selected':'')+'>'+esc(lbl)+'</option>';}).join('')+'</select>';}
+</script>
+</body>
+</html>
