@@ -107,7 +107,10 @@ var PRESETS=[
 var S={tasks:[],contacts:[],settings:{directors:[],deptEmails:{}}}, V='dashboard';
 
 /* ---------------- server bridge ---------------- */
-window.srv=function(fn){var args=[].slice.call(arguments,1);return fetch('/api/backend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:fn,params:args})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});};
+console.log("BEFORE SRV");
+function srv(fn){var args=[].slice.call(arguments,1);return fetch('/api/backend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:fn,params:args})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});}
+window.srv=srv;
+console.log("AFTER SRV", typeof window.srv);
 
 /* ---------------- date helpers ---------------- */
 function pad(n){return (n<10?'0':'')+n;}
