@@ -461,84 +461,188 @@ window.__delTask=function(id){closeModal();refreshTasks(srv('deleteTask',id));};
 
 window.__mediaRecorder = null;
 window.__audioChunks = [];
+window.__recTimer = null;
+window.__recSeconds = 0;
+var MAX_REC_SECONDS = 600; // 10 minutes limit
+var MAX_AUDIO_BYTES = 20 * 1024 * 1024; // 20 MB limit
+
+function getSupportedMimeType() {
+    var types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+        'audio/aac'
+    ];
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+        for (var i = 0; i < types.length; i++) {
+            if (MediaRecorder.isTypeSupported(types[i])) return types[i];
+        }
+    }
+    return 'audio/webm';
+}
+
+function fmtTimer(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
 
 window.__startRecording = function() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Your browser or device does not support native recording, or it is being blocked by Google Apps Script security. Please use the Upload File option.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+        toast("Your browser does not support native microphone recording. Please use the file upload option below.");
         return;
     }
     navigator.mediaDevices.getUserMedia({ audio: true })
     .then(function(stream) {
-        window.__mediaRecorder = new MediaRecorder(stream);
-        window.__mediaRecorder.start();
+        var mimeType = getSupportedMimeType();
+        try {
+            window.__mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+        } catch (e) {
+            window.__mediaRecorder = new MediaRecorder(stream);
+            mimeType = window.__mediaRecorder.mimeType || 'audio/webm';
+        }
+        
         window.__audioChunks = [];
+        window.__recSeconds = 0;
 
         window.__mediaRecorder.addEventListener("dataavailable", function(event) {
-            window.__audioChunks.push(event.data);
+            if (event.data && event.data.size > 0) {
+                window.__audioChunks.push(event.data);
+            }
         });
 
         window.__mediaRecorder.addEventListener("stop", function() {
+            if (window.__recTimer) {
+                clearInterval(window.__recTimer);
+                window.__recTimer = null;
+            }
             toast("Finalizing audio file...");
-            var audioBlob = new Blob(window.__audioChunks, { type: 'audio/webm' });
+            var audioBlob = new Blob(window.__audioChunks, { type: mimeType });
+
+            if (audioBlob.size > MAX_AUDIO_BYTES) {
+                toast("Audio file too large (" + Math.round(audioBlob.size / 1048576) + "MB). Limit is 20MB.");
+                resetRecUI();
+                return;
+            }
+
             var reader = new FileReader();
             reader.onloadend = function() {
                 var base64 = reader.result.split(',')[1];
+                var ext = mimeType.indexOf('mp4') > -1 ? '.mp4' : mimeType.indexOf('ogg') > -1 ? '.ogg' : mimeType.indexOf('aac') > -1 ? '.aac' : '.webm';
                 toast("Uploading securely to Drive...");
-                srv('uploadAudioToDrive', 'MOM_Audio_' + Date.now() + '.webm', 'audio/webm', base64)
+                srv('uploadAudioToDrive', 'MOM_Audio_' + Date.now() + ext, mimeType, base64)
                 .then(function(res) {
-                    if(res.ok) {
-                        document.getElementById('mom_audio_url_hidden').value = res.url;
-                        document.getElementById('mom_audio_id_hidden').value = res.id;
+                    if (res && res.ok) {
+                        if (document.getElementById('mom_audio_url_hidden')) document.getElementById('mom_audio_url_hidden').value = res.url;
+                        if (document.getElementById('mom_audio_id_hidden')) document.getElementById('mom_audio_id_hidden').value = res.id;
                         var player = document.getElementById('mom_audio_player');
-                        player.src = res.url;
-                        player.style.display = 'block';
-                        toast("G�� Audio saved!");
+                        if (player) {
+                            player.src = res.url || URL.createObjectURL(audioBlob);
+                            player.style.display = 'block';
+                        }
+                        toast("Audio saved!");
                     } else {
-                        toast("Upload failed: " + res.msg);
+                        toast("Upload failed: " + (res && res.msg ? res.msg : "Unknown error") + ". You can use file upload below.");
                     }
+                }).catch(function(e) {
+                    toast("Upload error. You can use the file upload option below.");
                 });
             };
             reader.readAsDataURL(audioBlob);
+            resetRecUI();
         });
 
-        document.getElementById('btnStartRec').style.display = 'none';
-        document.getElementById('btnStopRec').style.display = 'inline-block';
-        document.getElementById('recIndicator').style.display = 'inline-block';
-        toast("=��� Recording started...");
+        window.__mediaRecorder.start(1000);
+
+        // Recording timer
+        var recInd = document.getElementById('recIndicator');
+        if (recInd) {
+            recInd.innerText = "🔴 Recording (00:00)...";
+            recInd.style.display = 'inline-block';
+        }
+        window.__recTimer = setInterval(function() {
+            window.__recSeconds++;
+            if (recInd) {
+                recInd.innerText = "🔴 Recording (" + fmtTimer(window.__recSeconds) + ")...";
+            }
+            if (window.__recSeconds >= MAX_REC_SECONDS) {
+                toast("Maximum recording duration (10 min) reached.");
+                window.__stopRecording();
+            }
+        }, 1000);
+
+        var bStart = document.getElementById('btnStartRec');
+        var bStop = document.getElementById('btnStopRec');
+        if (bStart) bStart.style.display = 'none';
+        if (bStop) bStop.style.display = 'inline-block';
+        toast("Recording started...");
     })
     .catch(function(err) {
         console.error("Mic error:", err);
-        alert("Microphone access blocked! Google Apps Script blocks the microphone inside its web apps on most desktop browsers for security reasons. Please use the 'Upload File' button instead.");
+        var msg = "Could not access microphone.";
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            msg = "Microphone access denied. Please allow microphone permissions in your browser.";
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            msg = "No microphone found on your device.";
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            msg = "Microphone is already in use by another application.";
+        }
+        toast(msg);
+        alert(msg + " You can use the 'Or upload an audio file' option below instead.");
     });
 };
 
 window.__stopRecording = function() {
-    if(window.__mediaRecorder) {
+    if (window.__recTimer) {
+        clearInterval(window.__recTimer);
+        window.__recTimer = null;
+    }
+    if (window.__mediaRecorder && window.__mediaRecorder.state !== 'inactive') {
         window.__mediaRecorder.stop();
-        window.__mediaRecorder.stream.getTracks().forEach(function(track) { track.stop(); });
-        document.getElementById('btnStartRec').style.display = 'inline-block';
-        document.getElementById('btnStopRec').style.display = 'none';
-        document.getElementById('recIndicator').style.display = 'none';
+        if (window.__mediaRecorder.stream) {
+            window.__mediaRecorder.stream.getTracks().forEach(function(track) { track.stop(); });
+        }
+    } else {
+        resetRecUI();
     }
 };
 
+function resetRecUI() {
+    var bStart = document.getElementById('btnStartRec');
+    var bStop = document.getElementById('btnStopRec');
+    var recInd = document.getElementById('recIndicator');
+    if (bStart) bStart.style.display = 'inline-block';
+    if (bStop) bStop.style.display = 'none';
+    if (recInd) { recInd.style.display = 'none'; recInd.innerText = '🔴 Recording...'; }
+}
+
 window.__handleManualUpload = function(input) {
-  if(input.files && input.files[0]) {
+  if (input.files && input.files[0]) {
     var file = input.files[0];
+    if (file.size > MAX_AUDIO_BYTES) {
+      toast("Selected file is too large (" + Math.round(file.size / 1048576) + "MB). Limit is 20MB.");
+      input.value = '';
+      return;
+    }
     var player = document.getElementById('mom_audio_player');
-    player.src = URL.createObjectURL(file);
-    player.style.display = 'block';
+    if (player) {
+      player.src = URL.createObjectURL(file);
+      player.style.display = 'block';
+    }
 
     toast("Uploading audio to Google Drive...");
     var reader = new FileReader();
     reader.onload = function(e) {
       var base64 = e.target.result.split(',')[1];
-      srv('uploadAudioToDrive', file.name, file.type, base64).then(function(res) {
-        if(res.ok) {
-          document.getElementById('mom_audio_url_hidden').value = res.url;
-          document.getElementById('mom_audio_id_hidden').value = res.id;
-          toast("G�� Manual upload saved securely.");
-        } else { toast("Upload failed."); }
+      srv('uploadAudioToDrive', file.name, file.type || 'audio/mp3', base64).then(function(res) {
+        if (res && res.ok) {
+          if (document.getElementById('mom_audio_url_hidden')) document.getElementById('mom_audio_url_hidden').value = res.url;
+          if (document.getElementById('mom_audio_id_hidden')) document.getElementById('mom_audio_id_hidden').value = res.id;
+          toast("Manual upload saved securely.");
+        } else { toast("Upload failed: " + (res && res.msg ? res.msg : "Unknown error")); }
+      }).catch(function(err) {
+        toast("Upload error. Check network connection.");
       });
     };
     reader.readAsDataURL(file);
@@ -641,7 +745,7 @@ function openMom(t){
         '<button class="btn primary" style="padding:6px 12px; font-size:12px; flex:1;" id="btnStartRec" onclick="__startRecording()">=��� Start Recording</button>'+
         '<button class="btn ghost" style="padding:6px 12px; font-size:12px; flex:1; display:none; background:var(--overdueSoft); color:var(--overdue); border:1px solid var(--overdue);" id="btnStopRec" onclick="__stopRecording()">GŦ Stop Recording</button>'+
       '</div>'+
-      '<div style="font-size:11px; color:var(--inkSoft); margin-bottom:8px;">Or upload a file (if mic is blocked by browser): <input type="file" id="mom_audio_file" accept="audio/*" capture="microphone" style="font-size:11px; width:150px; padding:0; border:none; background:transparent;" onchange="__handleManualUpload(this)"></div>'+
+      '<div style="font-size:11px; color:var(--inkSoft); margin-bottom:8px;">Or select audio file: <input type="file" id="mom_audio_file" accept="audio/*" capture="microphone" style="font-size:11px; width:150px; padding:0; border:none; background:transparent;" onchange="__handleManualUpload(this)"></div>'+
 
       '<audio id="mom_audio_player" controls style="width:100%; height:30px; margin-bottom:8px; '+(t.momAudioUrl?'':'display:none;')+'" src="'+esc(t.momAudioUrl)+'"></audio>'+
       '<input type="hidden" id="mom_audio_url_hidden" value="'+esc(t.momAudioUrl)+'">'+
