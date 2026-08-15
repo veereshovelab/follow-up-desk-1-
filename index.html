@@ -99,7 +99,7 @@ var DEPARTMENTS=['HR','Accounts','Insurance','IT','Audit','Infrastructure'];
 var PRIORITIES=[['urgent','Urgent','#D14343','#FBE9E9'],['high','High','#C0791A','#FAF0E1'],['medium','Medium','#0F766E','#E3F0EF'],['low','Low','#6A7681','#EEF1F3']];
 var RECUR=[['none','One-off'],['daily','Daily'],['weekly','Weekly'],['monthly','Monthly'],['quarterly','Quarterly'],['yearly','Yearly']];
 var PRESETS=[
-  {title:'Reconcile telephone bills GÇö all directors',category:'Telephone & Bills',recurring:'monthly',priority:'medium'},
+  {title:'Reconcile telephone bills Gï¿½ï¿½ all directors',category:'Telephone & Bills',recurring:'monthly',priority:'medium'},
   {title:'Submit corporate card receipts & expense report',category:'Expenses & Budget',recurring:'monthly',priority:'high'},
   {title:'Check travel insurance validity / renewals',category:'Travel Insurance',recurring:'monthly',priority:'high'},
   {title:'Distribute board book & confirm attendance',category:'Board & Stakeholders',recurring:'quarterly',priority:'high'}
@@ -107,7 +107,7 @@ var PRESETS=[
 var S={tasks:[],contacts:[],settings:{directors:[],deptEmails:{}}}, V='dashboard';
 
 /* ---------------- server bridge ---------------- */
-function srv(fn){var a=[].slice.call(arguments,1);return new Promise(function(res,rej){var r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);r[fn].apply(r,a);});}
+function srv(fn){var args=[].slice.call(arguments,1);return fetch('/api/backend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:fn,params:args})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();});}
 
 /* ---------------- date helpers ---------------- */
 function pad(n){return (n<10?'0':'')+n;}
@@ -130,7 +130,7 @@ function contactById(id){for(var i=0;i<S.contacts.length;i++)if(S.contacts[i].id
 function taskById(id){for(var i=0;i<S.tasks.length;i++)if(S.tasks[i].id===id)return S.tasks[i];return null;}
 
 /* ---------------- boot ---------------- */
-window.onload=function(){srv('getState').then(function(st){if(!st){document.getElementById('view').innerHTML='<div class="empty">Server returned no data (null). This is almost always a stale deployment GÇö in Apps Script go to Deploy GåÆ Manage deployments GåÆ edit GåÆ Version: New version GåÆ Deploy, then reload. (Or open the Test deployment /dev URL, which always runs the latest saved code.)</div>';return;}S=st;render();}).catch(function(e){document.getElementById('view').innerHTML='<div class="empty">Could not load. Reload the page. '+esc(e&&e.message||e)+'</div>';});};
+window.onload=function(){srv('getState').then(function(st){if(!st){document.getElementById('view').innerHTML='<div class="empty">Server returned no data (null). This is almost always a stale deployment Gï¿½ï¿½ in Apps Script go to Deploy Gï¿½ï¿½ Manage deployments Gï¿½ï¿½ edit Gï¿½ï¿½ Version: New version Gï¿½ï¿½ Deploy, then reload. (Or open the Test deployment /dev URL, which always runs the latest saved code.)</div>';return;}S=st;render();}).catch(function(e){document.getElementById('view').innerHTML='<div class="empty">Could not load. Reload the page. '+esc(e&&e.message||e)+'</div>';});};
 document.getElementById('fab').onclick=function(){openTask(null,{});};
 
 function toast(msg){var r=document.getElementById('toastRoot');r.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(function(){r.innerHTML='';},4000);}
@@ -225,16 +225,16 @@ function viewDashboard(){
     weekly:open.filter(function(t){return t.recurring==='weekly';}).sort(byDue),
     monthly:open.filter(function(t){return ['monthly','quarterly','yearly'].indexOf(t.recurring)>-1;}).sort(byDue)};
   var doneWk=S.tasks.filter(function(t){return t.status==='done'&&t.completedAt&&(Date.now()-new Date(t.completedAt).getTime())<6048e5;}).length;
-  var h='<div class="eyebrow">Follow-up Desk</div><h1>Nothing slips today</h1><p class="sub">Every follow-up and meeting, ordered by how soon itGÇÖs due. Work week MonGÇôSat.</p>';
+  var h='<div class="eyebrow">Follow-up Desk</div><h1>Nothing slips today</h1><p class="sub">Every follow-up and meeting, ordered by how soon itGï¿½ï¿½s due. Work week MonGï¿½ï¿½Sat.</p>';
   h+='<div class="stats">'+
     stat(od.length,'Overdue',od.length?'var(--overdueSoft)':'var(--panel)',od.length?'var(--overdue)':'var(--ink)',od.length?'var(--overdue)':'var(--muted)',!od.length)+
     stat(td.length,'Due today',td.length?'var(--todaySoft)':'var(--panel)',td.length?'var(--today)':'var(--ink)',td.length?'var(--today)':'var(--muted)',!td.length)+
     stat(wk.length,'This week',' var(--panel)','var(--ink)','var(--muted)',true)+'</div>';
-  if(!S.triggersOn)h+='<div class="note" style="background:var(--primarySoft);color:var(--primaryInk);border:1px solid var(--primary);cursor:pointer" data-act="installrem"><span>&#128276;</span><span><b>Turn on the daily reminder email</b> GÇö get todayGÇÖs overdue &amp; due items in your inbox every morning.</span></div>';
+  if(!S.triggersOn)h+='<div class="note" style="background:var(--primarySoft);color:var(--primaryInk);border:1px solid var(--primary);cursor:pointer" data-act="installrem"><span>&#128276;</span><span><b>Turn on the daily reminder email</b> Gï¿½ï¿½ get todayGï¿½ï¿½s overdue &amp; due items in your inbox every morning.</span></div>';
   h+='<div class="sec"><div class="sech">&#9888;&#65039; Needs attention now <span class="c">'+att.length+'</span></div>';
-  h+=att.length?att.map(rowHtml).join(''):'<div class="empty">YouGÇÖre clear GÇö nothing overdue or due today.</div>';
+  h+=att.length?att.map(rowHtml).join(''):'<div class="empty">YouGï¿½ï¿½re clear Gï¿½ï¿½ nothing overdue or due today.</div>';
   h+='</div>';
-  h+='<div class="sec"><div class="sech">&#8635; My routine</div><p class="sub" style="margin:-4px 0 8px">Recurring tasks by cadence GÇö tick one done and it rolls to the next cycle.</p><div class="grid3">'+
+  h+='<div class="sec"><div class="sech">&#8635; My routine</div><p class="sub" style="margin:-4px 0 8px">Recurring tasks by cadence Gï¿½ï¿½ tick one done and it rolls to the next cycle.</p><div class="grid3">'+
     rcard('Daily','&#9200;','var(--primarySoft)','var(--primaryInk)',routine.daily)+
     rcard('Weekly','&#128197;','var(--todaySoft)','var(--today)',routine.weekly)+
     rcard('Monthly','&#128340;','var(--meetSoft)','var(--meet)',routine.monthly)+'</div></div>';
@@ -255,8 +255,8 @@ function doSms(){var v=document.getElementById('smsbox').value;if(!v.trim())retu
 /* ---------------- meetings ---------------- */
 function viewMeetings(){
   var meetings=S.tasks.filter(function(t){return t.type==='meeting'&&t.status==='pending';});
-  var h='<div class="eyebrow">Meetings</div><h1>Department meetings</h1><p class="sub">HR, Accounts, Insurance, IT, Audit, Infrastructure GÇö plus your daily morning meeting.</p>';
-  h+='<div class="note" style="background:var(--meetSoft);color:#2B3E6E;border:1px solid var(--meet);margin:12px 0"><span>&#9993;</span><span><b>How members get the mail:</b> add attendee emails, then tap the calendar icon GÇö the app creates the event and emails every guest an invite &amp; reminder. Use minutes (&#128221;) to record and circulate the MOM.</span></div>';
+  var h='<div class="eyebrow">Meetings</div><h1>Department meetings</h1><p class="sub">HR, Accounts, Insurance, IT, Audit, Infrastructure Gï¿½ï¿½ plus your daily morning meeting.</p>';
+  h+='<div class="note" style="background:var(--meetSoft);color:#2B3E6E;border:1px solid var(--meet);margin:12px 0"><span>&#9993;</span><span><b>How members get the mail:</b> add attendee emails, then tap the calendar icon Gï¿½ï¿½ the app creates the event and emails every guest an invite &amp; reminder. Use minutes (&#128221;) to record and circulate the MOM.</span></div>';
   h+='<div class="card" style="cursor:pointer;margin-bottom:12px" data-act="morning"><b>+ Schedule the daily morning meeting</b><div style="font-size:12px;color:var(--muted)">Recurring every day -+ take minutes &amp; circulate after</div></div>';
   DEPARTMENTS.forEach(function(dep){
     var list=meetings.filter(function(m){return m.department===dep;}).sort(byDue);
@@ -291,7 +291,7 @@ function renderList(){
 
 /* ---------------- contacts ---------------- */
 function viewContacts(){
-  var h='<div class="eyebrow">Contacts</div><h1>Follow-up contact list</h1><p class="sub">People you chase, brief, or coordinate with GÇö tap to call or email.</p>';
+  var h='<div class="eyebrow">Contacts</div><h1>Follow-up contact list</h1><p class="sub">People you chase, brief, or coordinate with Gï¿½ï¿½ tap to call or email.</p>';
   h+='<div class="toolbar"><input id="cq" placeholder="Search" oninput="renderContacts()"><button class="btn primary" data-act="newcontact">+ New</button></div><div id="cbox"></div>';
   setTimeout(renderContacts,0);
   return h;
@@ -300,7 +300,7 @@ function renderContacts(){
   var q=(document.getElementById('cq')||{}).value||'';
   var list=S.contacts.filter(function(c){return (c.name+' '+(c.org||'')+' '+(c.role||'')+' '+(c.email||'')+' '+(c.phone||'')).toLowerCase().indexOf(q.toLowerCase())>-1;}).sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   document.getElementById('cbox').innerHTML=list.length?('<div class="grid3">'+list.map(function(c){
-    return '<div class="card" style="display:flex;gap:10px"><div class="avatar">'+esc((c.name||'?').charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">'+esc(c.name)+'</div>'+((c.role||c.org)?'<div style="font-size:12px;color:var(--muted)">'+esc([c.role,c.org].filter(Boolean).join(' -+ '))+'</div>':'')+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+(c.phone?'<a class="chip" style="background:var(--primarySoft);color:var(--primaryInk)" href="tel:'+esc(c.phone)+'">GÿÄ '+esc(c.phone)+'</a>':'')+(c.email?'<a class="chip" style="background:var(--lineSoft);color:var(--inkSoft)" href="mailto:'+esc(c.email)+'">G£ë '+esc(c.email)+'</a>':'')+'</div>'+(c.notes?'<div style="font-size:12px;color:var(--faint);margin-top:6px">'+esc(c.notes)+'</div>':'')+'</div><div><button class="ib" data-act="editcontact" data-id="'+c.id+'">G£Ä</button><button class="ib danger" data-act="delcontact" data-id="'+c.id+'">=ƒùæ</button></div></div>';
+    return '<div class="card" style="display:flex;gap:10px"><div class="avatar">'+esc((c.name||'?').charAt(0).toUpperCase())+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">'+esc(c.name)+'</div>'+((c.role||c.org)?'<div style="font-size:12px;color:var(--muted)">'+esc([c.role,c.org].filter(Boolean).join(' -+ '))+'</div>':'')+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+(c.phone?'<a class="chip" style="background:var(--primarySoft);color:var(--primaryInk)" href="tel:'+esc(c.phone)+'">Gï¿½ï¿½ '+esc(c.phone)+'</a>':'')+(c.email?'<a class="chip" style="background:var(--lineSoft);color:var(--inkSoft)" href="mailto:'+esc(c.email)+'">Gï¿½ï¿½ '+esc(c.email)+'</a>':'')+'</div>'+(c.notes?'<div style="font-size:12px;color:var(--faint);margin-top:6px">'+esc(c.notes)+'</div>':'')+'</div><div><button class="ib" data-act="editcontact" data-id="'+c.id+'">Gï¿½ï¿½</button><button class="ib danger" data-act="delcontact" data-id="'+c.id+'">=ï¿½ï¿½ï¿½</button></div></div>';
   }).join('')+'</div>'):'<div class="empty">No contacts yet. Add the people you follow up with.</div>';
 }
 
@@ -310,8 +310,8 @@ function viewSettings(){
   var de=S.settings.deptEmails||{};
   var h='<div class="eyebrow">Settings</div><h1>Directors &amp; preferences</h1>';
   h+='<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:8px">Your three directors</div>'+[0,1,2].map(function(i){return '<input id="dir'+i+'" value="'+esc(d[i]||'')+'" style="margin-bottom:8px">';}).join('')+'<button class="btn primary" data-act="savedir">Save names</button></div>';
-  h+='<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:4px">Default attendees per department</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Auto-filled when you schedule that departmentGÇÖs meeting.</div>'+DEPARTMENTS.map(function(x){return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:100px;font-size:12px;font-weight:600">'+x+'</span><input id="de_'+x+'" value="'+esc(de[x]||'')+'" placeholder="email1@GÇª, email2@GÇª"></div>';}).join('')+'<button class="btn primary" data-act="savedept">Save emails</button></div>';
-  h+='<div class="card"><div style="font-weight:600;margin-bottom:4px">Daily reminder email</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Every morning, get overdue &amp; due-today items in your inboxGÇöeven without opening the app.</div>'+(S.triggersOn?'<button class="btn ghost" data-act="removerem">Turn off reminders</button>':'<button class="btn primary" data-act="installrem">Turn on reminders</button>')+'</div>';
+  h+='<div class="card" style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:4px">Default attendees per department</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Auto-filled when you schedule that departmentGï¿½ï¿½s meeting.</div>'+DEPARTMENTS.map(function(x){return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:100px;font-size:12px;font-weight:600">'+x+'</span><input id="de_'+x+'" value="'+esc(de[x]||'')+'" placeholder="email1@GÇª, email2@GÇª"></div>';}).join('')+'<button class="btn primary" data-act="savedept">Save emails</button></div>';
+  h+='<div class="card"><div style="font-weight:600;margin-bottom:4px">Daily reminder email</div><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Every morning, get overdue &amp; due-today items in your inboxGï¿½ï¿½even without opening the app.</div>'+(S.triggersOn?'<button class="btn ghost" data-act="removerem">Turn off reminders</button>':'<button class="btn primary" data-act="installrem">Turn on reminders</button>')+'</div>';
   return h;
 }
 
@@ -322,7 +322,7 @@ function openTask(t,prefill){
   function seg(v,l){return '<div class="seg" style="'+(f.type===v?(v==='meeting'?'background:var(--meetSoft);border-color:var(--meet);color:var(--meet)':'background:var(--primarySoft);border-color:var(--primary);color:var(--primaryInk)'):'')+'" onclick="__setType(\''+v+'\')">'+l+'</div>';}
   var meeting=f.type==='meeting';
   var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
-   '<div class="mhead">'+(editing?'Edit ':'New ')+(meeting?'meeting':'follow-up')+'<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   '<div class="mhead">'+(editing?'Edit ':'New ')+(meeting?'meeting':'follow-up')+'<button class="ib" onclick="closeModal()">Gï¿½ï¿½</button></div><div class="mbody">'+
    '<div class="segs">'+seg('followup','Follow-up')+seg('meeting','Meeting')+'</div>'+
    fld('Title','<input id="m_title" value="'+esc(f.title)+'">')+
    (meeting?
@@ -334,8 +334,8 @@ function openTask(t,prefill){
    fld('Priority','<div class="prio">'+PRIORITIES.map(function(p){return '<div class="seg" style="'+(f.priority===p[0]?'background:'+p[3]+';border-color:'+p[2]+';color:'+p[2]:'')+'" onclick="__setPrio(\''+p[0]+'\')">'+p[1]+'</div>';}).join('')+'</div>')+
    '<div class="two">'+fld(meeting?'Date':'Due date','<input type="date" id="m_dueDate" value="'+esc(f.dueDate)+'">')+fld(meeting?'Start time':'Time','<input type="time" id="m_dueTime" value="'+esc(f.dueTime)+'">')+'</div>'+
    fld('Repeat',selEl('m_recurring',RECUR.map(function(r){return r[0];}),f.recurring,RECUR))+
-   (S.contacts.length?fld('Link a contact','<select id="m_contactId"><option value="">GÇö none GÇö</option>'+S.contacts.map(function(c){return '<option value="'+c.id+'"'+(f.contactId===c.id?' selected':'')+'>'+esc(c.name+(c.org?' -+ '+c.org:''))+'</option>';}).join('')+'</select>'):'')+
-   fld('Notes GÇö kept as reference','<textarea id="m_notes" rows="2">'+esc(f.notes)+'</textarea>')+
+   (S.contacts.length?fld('Link a contact','<select id="m_contactId"><option value="">Gï¿½ï¿½ none Gï¿½ï¿½</option>'+S.contacts.map(function(c){return '<option value="'+c.id+'"'+(f.contactId===c.id?' selected':'')+'>'+esc(c.name+(c.org?' -+ '+c.org:''))+'</option>';}).join('')+'</select>'):'')+
+   fld('Notes Gï¿½ï¿½ kept as reference','<textarea id="m_notes" rows="2">'+esc(f.notes)+'</textarea>')+
    '</div><div class="mfoot">'+(editing?'<button class="btn ghost" style="color:var(--overdue)" onclick="__delTask(\''+f.id+'\')">Delete</button>':'')+'<div style="margin-left:auto;display:flex;gap:8px"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="__saveTask()">'+(editing?'Save':'Add')+'</button></div></div></div></div>';
   document.getElementById('modalRoot').innerHTML=m;
   window.__type=f.type;window.__prio=f.priority;window.__editId=editing?f.id:'';
@@ -389,7 +389,7 @@ window.__startRecording = function() {
                         var player = document.getElementById('mom_audio_player');
                         player.src = res.url;
                         player.style.display = 'block';
-                        toast("G£à Audio saved!");
+                        toast("Gï¿½ï¿½ Audio saved!");
                     } else {
                         toast("Upload failed: " + res.msg);
                     }
@@ -401,7 +401,7 @@ window.__startRecording = function() {
         document.getElementById('btnStartRec').style.display = 'none';
         document.getElementById('btnStopRec').style.display = 'inline-block';
         document.getElementById('recIndicator').style.display = 'inline-block';
-        toast("=ƒö¦ Recording started...");
+        toast("=ï¿½ï¿½ï¿½ Recording started...");
     })
     .catch(function(err) {
         console.error("Mic error:", err);
@@ -434,7 +434,7 @@ window.__handleManualUpload = function(input) {
         if(res.ok) {
           document.getElementById('mom_audio_url_hidden').value = res.url;
           document.getElementById('mom_audio_id_hidden').value = res.id;
-          toast("G£à Manual upload saved securely.");
+          toast("Gï¿½ï¿½ Manual upload saved securely.");
         } else { toast("Upload failed."); }
       });
     };
@@ -469,7 +469,7 @@ window.__processWithGemini = function() {
      fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
      .then(function(res) { return res.json(); })
      .then(function(data) {
-        btn.innerText = "G£¿ Process & Summarize";
+        btn.innerText = "Gï¿½ï¿½ Process & Summarize";
         btn.disabled = false;
         if(data.error) { toast("API Error: " + data.error.message); return; }
         try {
@@ -478,10 +478,10 @@ window.__processWithGemini = function() {
           document.getElementById('mom_transcript').value = parsed.transcript || text;
           document.getElementById('mom_disc').value = parsed.discussion || "";
           document.getElementById('mom_dec').value = parsed.decisions || "";
-          toast("G£à Processing complete! Data filled.");
+          toast("Gï¿½ï¿½ Processing complete! Data filled.");
         } catch (e) { toast("Error parsing summary. Check console."); console.error("Parse error:", e, data); }
      })
-     .catch(function(err) { toast("Network Error."); btn.innerText = "G£¿ Process & Summarize"; btn.disabled = false; console.error(err); });
+     .catch(function(err) { toast("Network Error."); btn.innerText = "Gï¿½ï¿½ Process & Summarize"; btn.disabled = false; console.error(err); });
   }
 
   // Use the file if they just manually selected one
@@ -507,7 +507,7 @@ window.__processWithGemini = function() {
            callAPI();
         } else {
            toast("Failed to retrieve audio from Drive.");
-           btn.innerText = "G£¿ Process & Summarize";
+           btn.innerText = "Gï¿½ï¿½ Process & Summarize";
            btn.disabled = false;
         }
      });
@@ -531,11 +531,11 @@ function openMom(t){
     '<div style="background:var(--primarySoft); border:1px solid var(--primary); border-radius:8px; padding:12px; margin-bottom:14px;">'+
       '<div style="font-weight:600; color:var(--primaryInk); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">'+
         '<span>&#128266; AI Meeting Assistant</span>'+
-        '<span id="recIndicator" style="display:none; color:var(--overdue); font-size:11px; font-weight:bold;">=ƒö¦ Recording...</span>'+
+        '<span id="recIndicator" style="display:none; color:var(--overdue); font-size:11px; font-weight:bold;">=ï¿½ï¿½ï¿½ Recording...</span>'+
       '</div>'+
       
       '<div style="display:flex; gap:8px; margin-bottom:8px;">'+
-        '<button class="btn primary" style="padding:6px 12px; font-size:12px; flex:1;" id="btnStartRec" onclick="__startRecording()">=ƒÄñ Start Recording</button>'+
+        '<button class="btn primary" style="padding:6px 12px; font-size:12px; flex:1;" id="btnStartRec" onclick="__startRecording()">=ï¿½ï¿½ï¿½ Start Recording</button>'+
         '<button class="btn ghost" style="padding:6px 12px; font-size:12px; flex:1; display:none; background:var(--overdueSoft); color:var(--overdue); border:1px solid var(--overdue);" id="btnStopRec" onclick="__stopRecording()">GÅ¦ Stop Recording</button>'+
       '</div>'+
       '<div style="font-size:11px; color:var(--inkSoft); margin-bottom:8px;">Or upload a file (if mic is blocked by browser): <input type="file" id="mom_audio_file" accept="audio/*" capture="microphone" style="font-size:11px; width:150px; padding:0; border:none; background:transparent;" onchange="__handleManualUpload(this)"></div>'+
@@ -545,11 +545,11 @@ function openMom(t){
       '<input type="hidden" id="mom_audio_id_hidden" value="'+esc(t.momAudioId||'')+'">'+
 
       '<textarea id="mom_transcript" rows="3" placeholder="Raw transcript or manual notes..." style="font-size:12px; margin-bottom:12px;">'+esc(t.momTranscript||'')+'</textarea>'+
-      '<button class="btn primary block" id="btnSummarize" onclick="__processWithGemini()">G£¿ Process & Summarize</button>'+
+      '<button class="btn primary block" id="btnSummarize" onclick="__processWithGemini()">Gï¿½ï¿½ Process & Summarize</button>'+
     '</div>' : '';
 
   var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
-   '<div class="mhead">Minutes of Meeting<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   '<div class="mhead">Minutes of Meeting<button class="ib" onclick="closeModal()">Gï¿½ï¿½</button></div><div class="mbody">'+
    '<div style="font-size:13px;color:var(--muted)">'+esc(t.title)+(t.dueDate?' -+ '+niceDate(t.dueDate):'')+'</div>'+
    fld('Present','<input id="mom_present" value="'+esc(present)+'">')+
    aiPanel +
@@ -561,7 +561,7 @@ function openMom(t){
 }
 function renderActs(){
   document.getElementById('momacts').innerHTML=window.__momActs.map(function(a,i){
-    return '<div class="actrow"><input placeholder="Action" value="'+esc(a.what)+'" oninput="__act('+i+',\'what\',this.value)"><input placeholder="Owner" value="'+esc(a.owner)+'" oninput="__act('+i+',\'owner\',this.value)"><input type="date" value="'+esc(a.due)+'" oninput="__act('+i+',\'due\',this.value)"><button class="ib danger" onclick="__delAct('+i+')">=ƒùæ</button></div>';
+    return '<div class="actrow"><input placeholder="Action" value="'+esc(a.what)+'" oninput="__act('+i+',\'what\',this.value)"><input placeholder="Owner" value="'+esc(a.owner)+'" oninput="__act('+i+',\'owner\',this.value)"><input type="date" value="'+esc(a.due)+'" oninput="__act('+i+',\'due\',this.value)"><button class="ib danger" onclick="__delAct('+i+')">=ï¿½ï¿½ï¿½</button></div>';
   }).join('');
 }
 window.__act=function(i,k,v){window.__momActs[i][k]=v;};
@@ -575,14 +575,14 @@ function collectMom(){return {present:document.getElementById('mom_present').val
 window.__saveMom=function(){closeModal();toast('Saving MOMGÇª');refreshTasks(srv('saveMom',window.__momId,collectMom()));};
 window.__circulate=function(){var id=window.__momId;toast('Saving and circulatingGÇª');srv('saveMom',id,collectMom()).then(function(tasks){S.tasks=tasks;srv('circulateMom',id).then(function(r){toast(r.msg);render();});});closeModal();};
 window.__copyMom=function(){var t=Object.assign({},taskById(window.__momId));var m=collectMom();t.momPresent=m.present;t.momDiscussion=m.discussion;t.momDecisions=m.decisions;t.momActions=JSON.stringify(m.actions);var txt=buildMomText(t);navigator.clipboard&&navigator.clipboard.writeText(txt);toast('MOM text copied.');};
-function buildMomText(t){var acts=[];try{acts=JSON.parse(t.momActions||'[]');}catch(e){}var l=['MINUTES OF MEETING','','Meeting: '+t.title,t.department?'Department: '+t.department:'',t.dueDate?'Date: '+niceDate(t.dueDate):'','Present: '+(t.momPresent||'GÇö'),'','DISCUSSION',t.momDiscussion||'GÇö','','DECISIONS',t.momDecisions||'GÇö','','ACTION ITEMS'];acts.length?acts.forEach(function(a,i){l.push((i+1)+'. '+a.what+(a.owner?' GÇö '+a.owner:'')+(a.due?' GÇö '+a.due:''));}):l.push('GÇö');return l.filter(function(x){return x!=='';}).join('\n');}
+function buildMomText(t){var acts=[];try{acts=JSON.parse(t.momActions||'[]');}catch(e){}var l=['MINUTES OF MEETING','','Meeting: '+t.title,t.department?'Department: '+t.department:'',t.dueDate?'Date: '+niceDate(t.dueDate):'','Present: '+(t.momPresent||'Gï¿½ï¿½'),'','DISCUSSION',t.momDiscussion||'Gï¿½ï¿½','','DECISIONS',t.momDecisions||'Gï¿½ï¿½','','ACTION ITEMS'];acts.length?acts.forEach(function(a,i){l.push((i+1)+'. '+a.what+(a.owner?' Gï¿½ï¿½ '+a.owner:'')+(a.due?' Gï¿½ï¿½ '+a.due:''));}):l.push('Gï¿½ï¿½');return l.filter(function(x){return x!=='';}).join('\n');}
 
 /* ---------------- contact modal ---------------- */
 function openContact(c){
   var f=c||{name:'',role:'',org:'',phone:'',email:'',notes:''};
   window.__cid=c?c.id:'';
   var m='<div class="overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">'+
-   '<div class="mhead">'+(c?'Edit':'New')+' contact<button class="ib" onclick="closeModal()">G£ò</button></div><div class="mbody">'+
+   '<div class="mhead">'+(c?'Edit':'New')+' contact<button class="ib" onclick="closeModal()">Gï¿½ï¿½</button></div><div class="mbody">'+
    fld('Name','<input id="c_name" value="'+esc(f.name)+'">')+
    '<div class="two">'+fld('Role / title','<input id="c_role" value="'+esc(f.role)+'">')+fld('Company / dept','<input id="c_org" value="'+esc(f.org)+'">')+'</div>'+
    '<div class="two">'+fld('Phone','<input id="c_phone" value="'+esc(f.phone)+'">')+fld('Email','<input id="c_email" value="'+esc(f.email)+'">')+'</div>'+
