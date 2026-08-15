@@ -8,10 +8,24 @@
  * The browser only talks to same-origin /api/backend endpoint.
  */
 
-export default async function handler(req, res) {
+const { getSession } = require('./session');
+
+module.exports = async function handler(req, res) {
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 1. Enforce Server-Side Session Authentication
+  const session = getSession(req);
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized: Session missing or expired. Please sign in.' });
+  }
+
+  // 2. Enforce 2-User Allowlist Server-Side
+  const allowedEmails = (process.env.ALLOWED_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  if (!allowedEmails.includes(session.email.toLowerCase())) {
+    return res.status(403).json({ error: `Forbidden: Email '${session.email}' is not authorized.` });
   }
 
   // Extract action and params from request body

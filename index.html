@@ -79,12 +79,14 @@
   .toolbar select,.toolbar input{width:auto;flex:1;min-width:120px}
   .avatar{width:40px;height:40px;border-radius:50%;background:var(--primarySoft);color:var(--primaryInk);display:grid;place-items:center;font-weight:700;flex-shrink:0}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand"><span class="brandmark">&#9889;</span> Follow-up Desk</div>
     <div class="tabs" id="tabs"></div>
+    <div id="userNav" style="display:flex;align-items:center;gap:8px;margin-left:auto"></div>
   </header>
   <div class="main" id="view"><div class="loading">Loading your deskGǪ</div></div>
 </div>
@@ -130,9 +132,109 @@ function prio(k){for(var i=0;i<PRIORITIES.length;i++)if(PRIORITIES[i][0]===k)ret
 function contactById(id){for(var i=0;i<S.contacts.length;i++)if(S.contacts[i].id===id)return S.contacts[i];return null;}
 function taskById(id){for(var i=0;i<S.tasks.length;i++)if(S.tasks[i].id===id)return S.tasks[i];return null;}
 
-/* ---------------- boot ---------------- */
-window.onload=function(){srv('getState').then(function(st){if(!st){document.getElementById('view').innerHTML='<div class="empty">Server returned no data (null). This is almost always a stale deployment G�� in Apps Script go to Deploy G�� Manage deployments G�� edit G�� Version: New version G�� Deploy, then reload. (Or open the Test deployment /dev URL, which always runs the latest saved code.)</div>';return;}S=st;render();}).catch(function(e){document.getElementById('view').innerHTML='<div class="empty">Could not load. Reload the page. '+esc(e&&e.message||e)+'</div>';});};
+/* ---------------- boot & auth ---------------- */
+window.onload=function(){checkAuth();};
 document.getElementById('fab').onclick=function(){openTask(null,{});};
+
+function checkAuth(){
+  fetch('/api/auth')
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.authenticated){
+        document.getElementById('tabs').style.display='flex';
+        document.getElementById('fab').style.display='block';
+        renderUserNav(res.user);
+        loadDesk();
+      }else{
+        renderLogin(res.clientId);
+      }
+    })
+    .catch(function(e){
+      document.getElementById('view').innerHTML='<div class="empty">Authentication check failed. Reload page.</div>';
+    });
+}
+
+function renderLogin(clientId){
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('fab').style.display='none';
+  document.getElementById('userNav').innerHTML='';
+  var h='<div class="card" style="max-width:420px;margin:40px auto;text-align:center;padding:24px">'+
+    '<h2 style="margin-top:0">Follow-up Desk</h2>'+
+    '<p style="color:var(--muted);font-size:13px;margin-bottom:20px">Please sign in with your authorized Google account to access your desk.</p>'+
+    '<div id="g_id_onload" style="display:flex;justify-content:center;margin:16px 0"></div>'+
+    '<div id="authErr" style="color:var(--overdue);margin-top:12px;font-size:12px;font-weight:600"></div>'+
+    '</div>';
+  document.getElementById('view').innerHTML=h;
+
+  if(clientId && window.google && window.google.accounts){
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleCredentialResponse
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById('g_id_onload'),
+      { theme:'outline', size:'large', type:'standard' }
+    );
+  }else if(!clientId){
+    document.getElementById('authErr').innerText='GOOGLE_CLIENT_ID environment variable is missing on server.';
+  }
+}
+
+function handleCredentialResponse(response){
+  toast('Signing in...');
+  fetch('/api/auth',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({credential:response.credential})
+  })
+  .then(function(r){return r.json();})
+  .then(function(res){
+    if(res.ok){
+      document.getElementById('tabs').style.display='flex';
+      document.getElementById('fab').style.display='block';
+      renderUserNav(res.user);
+      loadDesk();
+    }else{
+      document.getElementById('authErr').innerText=res.error||'Access denied';
+      toast(res.error||'Sign in failed');
+    }
+  })
+  .catch(function(err){
+    toast('Network error during sign in');
+  });
+}
+
+function renderUserNav(user){
+  var nav=document.getElementById('userNav');
+  if(user && user.email){
+    nav.innerHTML='<span style="font-size:11px;color:#9AA6B0">'+esc(user.email)+'</span>'+
+      '<button class="btn ghost" style="padding:4px 8px;font-size:11px;margin-left:4px" onclick="logout()">Logout</button>';
+  }else{
+    nav.innerHTML='';
+  }
+}
+
+function logout(){
+  fetch('/api/auth',{method:'DELETE'})
+    .then(function(){window.location.reload();});
+}
+
+function loadDesk(){
+  srv('getState').then(function(st){
+    if(!st){
+      document.getElementById('view').innerHTML='<div class="empty">Server returned no data.</div>';
+      return;
+    }
+    S=st;
+    render();
+  }).catch(function(e){
+    if(e && e.message && e.message.indexOf('401')>-1){
+      checkAuth();
+    }else{
+      document.getElementById('view').innerHTML='<div class="empty">Could not load desk data. '+esc(e&&e.message||e)+'</div>';
+    }
+  });
+}
 
 function toast(msg){var r=document.getElementById('toastRoot');r.innerHTML='<div class="toast">'+esc(msg)+'</div>';setTimeout(function(){r.innerHTML='';},4000);}
 
