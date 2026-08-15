@@ -663,67 +663,86 @@ window.__processWithGemini = function() {
   btn.innerText = "Processing with Gemini...";
   btn.disabled = true;
 
-  var apiKey = "";
-  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
-
-  var payload = {
-    contents: [{ parts: [] }],
-    generationConfig: { responseMimeType: "application/json" }
-  };
-  var promptPart = { text: "You are a professional secretary. Analyze the provided meeting input (audio or text notes). Return ONLY a valid JSON object with exactly three keys: 'transcript' (the literal full transcription of the audio, or just the raw text provided), 'discussion' (a professional summary of the main points), and 'decisions' (any explicit decisions made or action items)." };
-
-  function callAPI() {
-     fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-     .then(function(res) { return res.json(); })
-     .then(function(data) {
-        btn.innerText = "G�� Process & Summarize";
-        btn.disabled = false;
-        if(data.error) { toast("API Error: " + data.error.message); return; }
-        try {
-          var responseText = data.candidates[0].content.parts[0].text;
-          var parsed = JSON.parse(responseText);
-          document.getElementById('mom_transcript').value = parsed.transcript || text;
-          document.getElementById('mom_disc').value = parsed.discussion || "";
-          document.getElementById('mom_dec').value = parsed.decisions || "";
-          toast("G�� Processing complete! Data filled.");
-        } catch (e) { toast("Error parsing summary. Check console."); console.error("Parse error:", e, data); }
-     })
-     .catch(function(err) { toast("Network Error."); btn.innerText = "G�� Process & Summarize"; btn.disabled = false; console.error(err); });
+  function doSummarize(id, txt) {
+    fetch('/api/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileId: id, text: txt })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      btn.innerText = "G Process & Summarize";
+      btn.disabled = false;
+      if (res.error) {
+        toast(res.error);
+        return;
+      }
+      try {
+        var parsed = res.data;
+        document.getElementById('mom_transcript').value = parsed.transcript || text;
+        document.getElementById('mom_disc').value = (parsed.summary ? parsed.summary + '\n\n' : '') + (parsed.discussion || "");
+        document.getElementById('mom_dec').value = parsed.decisions || "";
+        
+        // Parse and populate structured action items
+        if (parsed.actions && Array.isArray(parsed.actions)) {
+          window.__momActs = parsed.actions.map(function(a) {
+            return {
+              what: a.what || "",
+              owner: a.owner || "",
+              due: a.due || ""
+            };
+          });
+          if (!window.__momActs.length) {
+            window.__momActs = [{ what: '', owner: '', due: '' }];
+          }
+          renderActs();
+        }
+        
+        toast("Processing complete! Review your MOM below.");
+      } catch (e) {
+        toast("Error parsing summary response.");
+        console.error("Parse error:", e);
+      }
+    })
+    .catch(function(err) {
+      btn.innerText = "G Process & Summarize";
+      btn.disabled = false;
+      toast("Network error during AI summarization.");
+      console.error(err);
+    });
   }
 
-  // Use the file if they just manually selected one
-  if (fileInput.files && fileInput.files.length > 0) {
-     var file = fileInput.files[0];
-     var reader = new FileReader();
-     reader.onload = function(e) {
-        var base64 = e.target.result.split(',')[1];
-        payload.contents[0].parts.push({ inlineData: { mimeType: file.type || "audio/mp3", data: base64 } });
-        payload.contents[0].parts.push(promptPart);
-        callAPI();
-     };
-     reader.readAsDataURL(file);
-  } 
-  // Otherwise, pull the recorded/uploaded file from Drive
-  else if (fileId) {
-     toast("Fetching saved audio from Drive...");
-     srv('getAudioBase64', fileId).then(function(res) {
-        if(res.ok) {
-           payload.contents[0].parts.push({ inlineData: { mimeType: res.mimeType, data: res.base64 } });
-           payload.contents[0].parts.push(promptPart);
-           toast("Analyzing audio...");
-           callAPI();
+  // If a file is selected but not yet uploaded/saved to hidden inputs
+  if (!fileId && fileInput.files && fileInput.files.length > 0) {
+    toast("Uploading selected file before processing...");
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+      srv('uploadAudioToDrive', file.name, file.type || 'audio/mp3', base64)
+      .then(function(res) {
+        if (res && res.ok) {
+          if (document.getElementById('mom_audio_url_hidden')) document.getElementById('mom_audio_url_hidden').value = res.url;
+          if (document.getElementById('mom_audio_id_hidden')) document.getElementById('mom_audio_id_hidden').value = res.id;
+          var player = document.getElementById('mom_audio_player');
+          if (player) {
+            player.src = res.url;
+            player.style.display = 'block';
+          }
+          doSummarize(res.id, text);
         } else {
-           toast("Failed to retrieve audio from Drive.");
-           btn.innerText = "G�� Process & Summarize";
-           btn.disabled = false;
+          toast("Upload failed. Processing text notes only.");
+          doSummarize('', text);
         }
-     });
-  } 
-  // Otherwise, just summarize the text
-  else {
-     payload.contents[0].parts.push({ text: "Meeting Input:\n" + text });
-     payload.contents[0].parts.push(promptPart);
-     callAPI();
+      })
+      .catch(function() {
+        toast("Upload failed. Processing text notes only.");
+        doSummarize('', text);
+      });
+    };
+    reader.readAsDataURL(file);
+  } else {
+    doSummarize(fileId, text);
   }
 };
 
