@@ -30,9 +30,11 @@
 
   /* ---- Header ---- */
   header{background:linear-gradient(135deg,var(--ink) 0%,#0F2D4F 100%);color:#fff;padding:0 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:5;height:56px;box-shadow:0 2px 12px rgba(12,35,64,0.18)}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-0.01em;white-space:nowrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-0.01em;white-space:nowrap;flex-shrink:0}
   .brandmark{background:linear-gradient(135deg,var(--primary),#0D8B73);width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;letter-spacing:-0.02em;box-shadow:0 2px 6px rgba(10,110,92,0.3)}
-  .tabs{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+  .tabs{display:flex;align-items:center;justify-content:center;gap:4px;flex:1;min-width:0;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .tabs::-webkit-scrollbar{display:none}
+  #userNav{display:flex;align-items:center;gap:8px;flex-shrink:0;white-space:nowrap;margin-left:auto}
   .tab{font-size:13px;padding:8px 14px;border-radius:8px;color:rgba(255,255,255,0.5);cursor:pointer;white-space:nowrap;transition:var(--transition);font-weight:500}
   .tab:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.08)}
   .tab.active{color:#fff;background:rgba(255,255,255,0.13);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1)}
@@ -174,12 +176,12 @@
   /* ---- Responsive: Tablet ---- */
   @media(max-width:768px){
     header{padding:10px 14px;gap:8px;height:auto;min-height:48px;flex-wrap:wrap}
-    .brand{font-size:14px}
+    .brand{font-size:14px;flex-shrink:0}
     .brandmark{width:28px;height:28px;font-size:11px}
-    .tabs{gap:2px;order:3;width:100%;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 2px}
+    #userNav{font-size:10px;margin-left:auto;flex-shrink:0}
+    .tabs{order:3;flex:0 0 100%;width:100%;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 2px;flex-wrap:nowrap;white-space:nowrap;gap:2px}
     .tabs::-webkit-scrollbar{display:none}
     .tab{font-size:12px;padding:6px 10px}
-    #userNav{font-size:10px}
     .main{padding:16px 14px}
     h1{font-size:20px}
     .stats{grid-template-columns:repeat(2,1fr)}
@@ -215,7 +217,7 @@
   <header>
     <div class="brand"><span class="brandmark">AV</span> Anusharan Ventures</div>
     <div class="tabs" id="tabs"></div>
-    <div id="userNav" style="display:flex;align-items:center;gap:8px;margin-left:auto"></div>
+    <div id="userNav"></div>
   </header>
   <div class="main" id="view"><div class="loading">Loading your workspace…</div></div>
 </div>
